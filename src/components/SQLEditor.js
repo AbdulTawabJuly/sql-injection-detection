@@ -82,7 +82,7 @@ function SQLEditor() {
   return (
     <div className="container">
       <h1>SQL Injection Detection</h1>
-      <h2>Enter an SQL query to determine if it's a potential SQL injection attempt.</h2>
+      <h2>Enter an SQL query to determine if it's a potential SQL injection attempt</h2>
       <div className="editor-box">
         {/* Highlighted Layer */}
         <div
