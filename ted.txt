@@ -1,0 +1,200 @@
+import React, { useState, useRef, useEffect } from "react";
+
+const knownKeywords = [
+  "SELECT",
+  "FROM",
+  "WHERE",
+  "INSERT",
+  "UPDATE",
+  "DELETE",
+  "CREATE",
+  "DROP",
+  "JOIN",
+  "GROUP BY",
+  "ORDER BY",
+  "HAVING",
+  "LIMIT",
+  "OFFSET",
+  "AND",
+  "OR",
+  "NOT",
+  "IN",
+  "IS",
+  "NULL",
+  "AS",
+];
+
+function SQLEditor() {
+  const [query, setQuery] = useState("");
+  const textareaRef = useRef(null);
+
+  const handleQueryChange = (e) => {
+    setQuery(e.target.value);
+  };
+
+  const adjustTextareaHeight = () => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = "auto"; // Reset height
+      textarea.style.height = `${textarea.scrollHeight}px`; // Adjust height to content
+    }
+  };
+
+  useEffect(() => {
+    adjustTextareaHeight();
+  }, [query]);
+
+  const handleSubmit = () => {
+    fetch("/execute-sql", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ query }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("Query result:", data);
+      })
+      .catch((error) => console.error("Error:", error));
+  };
+
+  const highlightSQL = (input) => {
+    // Sort keywords by length to match multi-word keywords first
+    const sortedKeywords = [...knownKeywords].sort((a, b) => b.length - a.length);
+    const keywordPattern = new RegExp(
+      `\\b(${sortedKeywords.join("|").replace(/ /g, "\\s")})\\b`,
+      "gi"
+    );
+
+    return input
+      .replace(/[\n\r]/g, "<br/>") // Handle line breaks
+      .replace(keywordPattern, (match) => {
+        return `<span style="color: blue; font-weight: bold;">${match.toUpperCase()}</span>`;
+      });
+  };
+
+  return (
+    <div className="container">
+      <h1>SQL Injection Detection</h1>
+      <h2>Enter an SQL query to determine if it's a potential SQL injection attempt.</h2>
+      <div className="editor-box">
+        {/* Highlighted Layer */}
+        <div
+          className="highlight-layer"
+          dangerouslySetInnerHTML={{ __html: highlightSQL(query) }}
+        ></div>
+        {/* Text Area */}
+        <textarea
+          ref={textareaRef}
+          className="text-layer"
+          value={query}
+          onChange={handleQueryChange}
+          placeholder="Write your SQL query here..."
+        />
+        <button onClick={handleSubmit}>Submit</button>
+      </div>
+    </div>
+  );
+}
+
+export default SQLEditor;
+-----------------------------------------------------------------------------------------------------
+body {
+  background-color: #1a1a1a;
+  margin: 0;
+  font-family: 'Arial', sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center; /* Center-align text within the container */
+  padding: 20px;
+}
+
+.editor-box {
+  position: relative;
+  background-color: #f7f7f7;
+  width: 200%;
+  height: 400px;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  white-space: pre-wrap; /* Preserves formatting */
+  word-break: normal;    /* Prevents breaking words */
+  overflow-wrap: normal; /* Ensures text stays intact */
+}
+
+
+h1 {
+  margin-bottom: 10px;
+  font-size: 2rem;
+  color: #ffffff;
+}
+
+h2 {
+  margin-bottom: 30px;
+  font-size: 1.2rem;
+  color: #cccccc;
+}
+
+
+textarea {
+  width: 100%;
+  height: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  resize: none;
+  color: #000;
+  font-size: 1.2rem;
+  font-family: monospace;
+  padding: 0;
+}
+
+button {
+  margin-top: 10px;
+  padding: 10px 20px;
+  background-color: #007acc;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #005f9e;
+}
+
+.highlight-layer {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  right: 20px;
+  z-index: 1;
+  white-space: pre-wrap;
+  font-size: 1.2rem;
+  font-family: monospace;
+  pointer-events: none;
+  color: transparent;
+}
+
+.text-layer {
+  position: relative;
+  background: transparent;
+  z-index: 2;
+  font-size: 1.2rem;
+  font-family: monospace;
+  width: 100%;
+  border: none;
+  outline: none;
+  resize: none; /* Disable manual resizing */
+}
