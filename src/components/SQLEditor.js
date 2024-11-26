@@ -31,6 +31,7 @@ const knownKeywords = [
 
 function SQLEditor() {
   const [query, setQuery] = useState("");
+  const [result, setResult] = useState("");  // State for result
   const textareaRef = useRef(null);
 
   const handleQueryChange = (e) => {
@@ -50,22 +51,30 @@ function SQLEditor() {
   }, [query]);
 
   const handleSubmit = () => {
-    fetch("/execute-sql", {
+    fetch("http://localhost:5000/detect_sql_injection", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ query }),
+      body: JSON.stringify({ sql_query: query }),
     })
-      .then((response) => response.json())
-      .then((data) => {
-        console.log("Query result:", data);
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Backend not available");
+        }
+        return response.json();
       })
-      .catch((error) => console.error("Error:", error));
+      .then((data) => {
+        setResult(data.result || data.error);
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        setResult("Error: Backend is not running or an issue occurred.");
+      });
   };
+  
 
   const highlightSQL = (input) => {
-    // Sort keywords by length to match multi-word keywords first
     const sortedKeywords = [...knownKeywords].sort((a, b) => b.length - a.length);
     const keywordPattern = new RegExp(
       `\\b(${sortedKeywords.join("|").replace(/ /g, "\\s")})\\b`,
@@ -73,10 +82,10 @@ function SQLEditor() {
     );
 
     return input
-      .replace(/[\n\r]/g, "<br/>") // Handle line breaks
+      .replace(/[\n\r]/g, "<br/>") 
       .replace(keywordPattern, (match) => {
         return `<span style="color: blue; font-weight: bold;">${match.toUpperCase()}</span>`;
-      })
+      });
   };
 
   return (
@@ -84,12 +93,10 @@ function SQLEditor() {
       <h1>SQL Injection Detection</h1>
       <h2>Enter an SQL query to determine if it's a potential SQL injection attempt</h2>
       <div className="editor-box">
-        {/* Highlighted Layer */}
         <div
           className="highlight-layer"
           dangerouslySetInnerHTML={{ __html: highlightSQL(query) }}
         ></div>
-        {/* Text Area */}
         <textarea
           ref={textareaRef}
           className="text-layer"
@@ -99,9 +106,17 @@ function SQLEditor() {
         />
         <button onClick={handleSubmit}>Submit</button>
       </div>
+
+      <div className="result-box">
+        {result && (
+          <div className="white">
+            <h3>Result:</h3>
+            <p >{result}</p>
+          </div>
+        )}
+      </div>
     </div>
   );
-  
 }
 
 export default SQLEditor;
