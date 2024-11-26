@@ -31,7 +31,7 @@ const knownKeywords = [
 
 function SQLEditor() {
   const [query, setQuery] = useState("");
-  const [result, setResult] = useState("");  // State for result
+  const [result, setResult] = useState(""); 
   const textareaRef = useRef(null);
 
   const handleQueryChange = (e) => {
@@ -41,8 +41,8 @@ function SQLEditor() {
   const adjustTextareaHeight = () => {
     const textarea = textareaRef.current;
     if (textarea) {
-      textarea.style.height = "auto"; // Reset height
-      textarea.style.height = `${textarea.scrollHeight}px`; // Adjust height to content
+      textarea.style.height = "auto"; 
+      textarea.style.height = `${textarea.scrollHeight}px`; 
     }
   };
 
@@ -59,13 +59,15 @@ function SQLEditor() {
       body: JSON.stringify({ sql_query: query }),
     })
       .then((response) => {
+        console.log(response)
         if (!response.ok) {
           throw new Error("Backend not available");
         }
         return response.json();
       })
       .then((data) => {
-        setResult(data.result || data.error);
+        console.log("Received data:", data); 
+        setResult(data.result || data.error); 
       })
       .catch((error) => {
         console.error("Error:", error);
